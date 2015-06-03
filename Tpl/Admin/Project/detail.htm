@@ -1,0 +1,356 @@
+<script language="javascript">
+var tit = '';
+$(function(){
+	$("#ProjectDetailCon").parent().css({
+		"overflow-y":"scroll"
+	});
+	var cw = $("#ProjectDetailCon").width();
+	var pr = '<?php echo $page_row ?>';
+	var pn = false;
+	var ch = $("body").height();
+	if(pr>0){
+		pn = true;
+	}
+	$("#ProjectDetail").panel({
+		title:'详情信息',
+		collapsible:true,
+		collapsed:true,
+		//width:cw-17,
+		href:'__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=detail_info&id={$id}',
+		tools:[
+		{
+			title: '编辑',
+			iconCls: 'icon-edit',
+			handler: function(){
+				$("#editProject{$uniqid}").dialog({
+					title:'编辑项目',
+					resizable:true,
+					width:885,
+					height:430,
+					href:'__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=add&act=edit&id={$id}',
+					onOpen:function(){
+						cancel['Project'] = $(this);
+					},
+					onClose:function(){
+						//$("#ProjectDetail").panel('refresh');
+						cancel['Project'] = null;
+					}
+				});
+			}
+		},'-',{
+			title: '邮件提醒',
+			iconCls: 'icon-email',
+			handler: function(){
+				var len = $(".selectProjectDetail").length;
+				//alert('{$id}');
+				if(!len){
+					$("<div/>").dialog({
+						title:'邮件提醒',
+						resizable:true,
+						width:610,
+						height:432,
+						href:'__APP__?g=Public&m=Mail&a=index&mode=3&pid={$id}',
+						onOpen:function(){
+							cancel['ProjectDetail'] = $(this);
+						},
+						onClose:function(){
+							$(this).dialog('destroy');
+							cancel['ProjectDetail'] = null;
+						}
+					});
+				}
+			}
+		},'-']
+	});
+	
+	$("#ProjectProgress").panel({
+		//title:'跟进信息',
+		border:false,
+		collapsible:true,
+		collapsed:false,
+		//width:cw-17,
+		href:'__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=detail_progress&id={$id}',
+		style:{'margin-top':'4px'}
+	});
+	
+	$("#ReportDetail").panel({
+		title:'BUG列表',
+		collapsible:true,
+		collapsed:false,
+		style:{'margin-top':'4px'}
+	});
+	$("#Report").datagrid({
+		//title:'BUG列表',
+		autoRowHeight:false,
+		singleSelect:true,
+		striped:true,
+		rownumbers:true,
+		pagination:pn,
+		showFooter:true,
+		prototype:true,
+		pageSize:10,
+		pageList:[10,30,50,80,100,100000000000],
+		method:'get',
+		url:'__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=index&json=1&pid={$id}',
+		fitColumns:Number('{$TC.config.DG_FIT_COLUMNS}'),
+		nowrap:Number('{$TC.config.DATA_NOWRAP}'),
+		selectOnCheck:false,
+		checkOnSelect:true,
+		onBeforeLoad: function(){  
+			 if($("#ReportDetail .datagrid-toolbar table tr #sersSearchReportStatus").length==0){
+				 var grid = $("#ReportDetail .datagrid-toolbar table tr");  
+				 var ldata = '<td>'+$("#selectInputReport").html()+'</td>'; 
+				 grid.append(ldata);
+				 
+				 $("#sersSearchReportStatus").change(function(){
+					var idd = $(this).val();
+					$.post('__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=change&act=status&pid={$id}', {val:idd}, function(data){
+						$("#Report").datagrid('reload');
+					});
+				});
+			 }
+			 
+			 if($("#ReportDetail .datagrid-toolbar #ReportSearch").length==0){
+				 var toolbar = $("#ReportDetail .datagrid-toolbar");
+				 toolbar.css({
+					 "overflow":"hidden"
+				 });
+				 var tooltable = $("#ReportDetail .datagrid-toolbar table");
+				 tooltable.css({
+					 "float":"left"
+				 });
+				 var tw = toolbar.width();
+				 tooltable.addClass("tname");
+				 var sw = $("#ReportDetail .datagrid-toolbar .tname").width();
+				 //alert(sw);
+				 
+				 var ww = tw-sw-8;
+				 var date = '<table cellspacing="0" cellpadding="0" style="width:'+ww+'px; height:28px; float: left;" class="pname"><tr><td align="right">'+$("#selectInputReport2").html()+'</td></tr></table>';    
+				 toolbar.append(date); 
+				 
+				 $('#ReportSearch').searchbox({   
+					searcher:function(value,name){
+						$.post('__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=change&act='+name+'&pid={$id}&mode=like', {val:value}, function(data){
+							$("#Report").datagrid('reload');
+						});
+					},   
+					menu:'#ReportSearchSon',   
+					prompt:'请输入关键字'  
+				 }); 
+			 }
+		},
+		onHeaderContextMenu:function(e,f){
+			if(f!='title'){
+				$("#searchReport").dialog({
+					title:'快速搜索',
+					resizable:true,
+					width:480,
+					height:80,
+					href:'__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=search&pid={$id}&field='+f
+				});
+			}
+			e.preventDefault();
+		},
+		onDblClickRow:function(e,rowIndex,rowData){
+			//var se = $(this).datagrid('getSelected');
+			var se = $("#Report").datagrid('getChecked');
+			var se_len = se.length;
+			var idd = se[0]['id'];
+			if(se_len==1){
+				$("<div/>").dialog({
+					title:'BUG详情',
+					resizable:true,
+					width:955,
+					height:ch-80,
+					href:'__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=detail&id='+idd,
+					onOpen:function(){
+						cancel['ReportDetail'] = $(this);
+					},
+					onClose:function(){
+						//$("#Bug").datagrid('reload');
+						$(this).dialog('destroy');
+						cancel['ReportDetail'] = null;
+						$("#Report").datagrid('reload');
+					}
+				});
+			}
+		},
+		onUncheck:function(i,d){
+			$("#Report").datagrid('unselectRow',i);
+		},
+		toolbar:[{
+		iconCls: 'icon-add',
+			text : '新增',
+			handler: function(){
+				$("#addReport").dialog({
+					title:'新增BUG',
+					resizable:true,
+					width:920,
+					height:463,
+					href:'__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=add&act=add&pid={$id}',
+					onOpen:function(){
+						cancel['Report'] = $(this);
+					},
+					onClose:function(){
+						//$(this).dialog('destroy');
+						//$("#Report").datagrid('reload');
+						cancel['Report'] = null;
+					}
+				});
+			}
+		},'-',{
+			iconCls: 'icon-edit',
+			text : '编辑',
+			handler: function(){
+				//var se = $("#Report").datagrid('getSelected');
+				var se = $("#Report").datagrid('getChecked');
+				var se_len = se.length;
+				var idd = se[0]['id'];
+				if(se_len==1){
+					$("#addReport").dialog({
+						title:'编辑BUG',
+						resizable:true,
+						width:920,
+						height:455,
+						href:'__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=add&act=edit&pid={$id}&id='+idd,
+						onOpen:function(){
+							cancel['Report'] = $(this);
+						},
+						onClose:function(){
+							//$(this).dialog('destroy');
+							//$("#Report").datagrid('reload');
+							cancel['Report'] = null;
+						}
+					});
+				}else if(se_len>1){
+					$.messager.alert('提示','不能同时编辑两行数据！','warning');
+				}
+			}
+		},'-',{
+			iconCls: 'icon-cancel',
+			text : '删除',
+			handler: function(){
+				var se = $("#Report").datagrid('getChecked');
+				var s = "";  
+				for (var property in se) {  
+					s = s + se[property]['id']+',' ;  
+				}
+				if(s){
+					$.messager.confirm('提示','确定删除吗！',function(r){
+						if(r==true){
+							$.messager.progress();
+							$.post('__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=del',{id:s}, function(data){
+								$.messager.progress('close');
+								if(data==1){
+									$.messager.alert('提示','删除数据成功！','info',function(){
+										$("#Report").datagrid('reload');
+									});
+								}else if(data==0){
+									$.messager.alert('提示','删除数据失败！','warning');
+								}else if(data==2){
+									$.messager.alert('提示','只能删除自己所新增的数据！','warning');
+								}else{
+									$.messager.alert('提示','您没有删除权限','warning');
+								}
+							});
+						}
+					});
+				}
+			}
+		},'-',{
+			iconCls: 'icon-email',
+			text : '邮件提醒',
+			handler: function(){
+				var len = $(".selectReportMail").length;
+				var se = $("#Report").datagrid('getChecked');
+				var se_len = se.length;
+				var idd = se[0]['id'];
+				if(se_len==1){
+					if(!len){
+						$("<div/>").dialog({
+							title:'邮件提醒',
+							resizable:true,
+							width:610,
+							height:432,
+							href:'__APP__?g=Public&m=Mail&a=index&mode=4&pid={$id}&id='+idd,
+							onOpen:function(){
+								cancel['ReportMail'] = $(this);
+							},
+							onClose:function(){
+								$(this).dialog('destroy');
+								cancel['ReportMail'] = null;
+							}
+						});
+					}
+				}else if(se_len>1){
+					$.messager.alert('提示','不能同时选择两行数据！','warning');
+				}
+			}
+		},'-',{
+			iconCls: 'icon-search',
+			text : '高级搜索',
+			handler: function(){
+				$("#searchReport").dialog({
+					title:'高级搜索',
+					resizable:true,
+					width:500,
+					height:220,
+					href:'__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=advsearch&pid={$id}'
+				});
+			}
+		},'-',{
+			iconCls: 'icon-reload',
+			text : '重载',
+			handler: function(){
+				$.get('__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=clear', function(data){
+					$("#sersSearchReportStatus").val(0);
+					$("#ReportSearch").searchbox('setValue','');
+					$("#Report").datagrid('reload');
+				});
+			}
+		}],
+		frozenColumns:[[
+			{checkbox:true},
+			{field:'bugno',title:'<span class="tit-bl" title="单击右键，进入快速搜索">问题编号</span>',width:83,sortable:true}
+		]],
+		columns:[[  
+			{field:'status',title:'<span class="tit-bl" title="单击右键，进入快速搜索">状态</span>',width:60,sortable:true},
+			{field:'user_id',title:'<span class="tit-bl" title="单击右键，进入快速搜索">指派给</span>',width:60,sortable:true},
+			{field:'type',title:'<span class="tit-bl" title="单击右键，进入快速搜索">出现位置</span>',width:100,sortable:true},
+			{field:'level',title:'<span class="tit-bl" title="单击右键，进入快速搜索">严重性</span>',width:55,sortable:true},
+			{field:'hertz',title:'<span class="tit-bl" title="单击右键，进入快速搜索">频率</span>',width:60,sortable:true},
+			{field:'priority',title:'<span class="tit-bl" title="单击右键，进入快速搜索">优先级</span>',width:55,sortable:true},
+			{field:'os',title:'<span class="tit-bl" title="单击右键，进入快速搜索">平台</span>',width:130,sortable:true},
+			{field:'title',title:'<span>摘要</span>',width:300},
+			{field:'creator',title:'<span class="tit-bl" title="单击右键，进入快速搜索">提交人</span>',width:60,sortable:true},
+			{field:'addtime',title:'<span class="tit-bl" title="单击右键，进入快速搜索">提交日期</span>',width:145,sortable:true}
+		]]
+	});
+});
+</script>
+<div id="ProjectDetailCon" class="con">
+	<div id="ProjectDetail" style="padding:3px"></div>
+    <div id="ReportDetail" style="padding:3px; -moz-user-select:none;" onselectstart="return false;">
+      <table id="Report"></table>
+    </div>
+    <div id="ProjectProgress"></div>  
+</div>
+<div id="editProject{$uniqid}"></div>
+<div id="searchReport"></div>
+<div id="addReport"></div>
+<div id="selectInputReport" style="display:none">
+ <span class="datagrid-btn-separator-nofloat" style="margin-right:2px"></span>
+ <select id="sersSearchReportStatus" >
+  <option value="0">所有状态</option> 
+  <foreach name="tinfo" item="t">
+   <option value="<?php echo $t->id ?>"><?php echo $t->text ?></option>
+  </foreach>
+ </select> 
+</div>
+<div id="selectInputReport2" style="display:none">
+<input id="ReportSearch" AUTOCOMPLETE="off" style="width:280px;"></input>  
+<div id="ReportSearchSon" style="width:120px">
+	<div data-options="name:'bugno'">问题编号</div>  
+    <div data-options="name:'title'">问题摘要</div>
+</div> 
+</div>

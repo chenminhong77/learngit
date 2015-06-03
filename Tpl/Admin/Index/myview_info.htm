@@ -1,0 +1,121 @@
+<script language="javascript">
+$(function(){
+	$(".view-close").click(function(){
+		var n = $(this).parent().parent().parent().next('tbody');
+		n.stop(true,true).toggle();
+		$(this).toggleClass("view-open");
+	});
+});
+
+var otit;
+function toPro(idd,idn,type){
+	var n = '项目';
+	var u = 'Project';
+	tit = n+'-'+idn;
+	var ishas = $("#rightTabs").tabs('exists',otit);
+	if(!ishas){
+		$("#rightTabs").tabs('add',{
+			id : -2,
+			title : n+'-'+idn,
+			href : '__APP__?g=<?php echo GROUP_NAME; ?>&m='+u+'&a=detail&id='+idd,
+			closable : true,
+		});
+		otit = tit;
+	}else{
+		if(otit!=tit){
+			var tab = $("#rightTabs").tabs('getTab',otit);
+			$("#rightTabs").tabs('update',{
+				tab:tab,
+				options:{
+					title : n+'-'+idn,
+					href : '__APP__?g=<?php echo GROUP_NAME; ?>&m='+u+'&a=detail&id='+idd,
+					closable : true,
+				} 
+			});
+			otit = tit;
+			$("#rightTabs").tabs('select',tit);
+		}else{
+			$("#rightTabs").tabs('select',tit);
+		}
+	}
+}
+</script>
+<if condition="$ainfo">
+<?php
+ foreach($ainfo as $key=>$info){
+?>
+<if condition="$info[0]['proname']">
+<table width="100%" class="infobox table-border" border="0" cellspacing="0" cellpadding="0" style="margin-bottom:5px">
+  <thead>
+   <tr>
+    <td height="25" colspan="3" valign="middle"  class="rebg3">
+      <span class="view-close"></span>&nbsp;<label><a href="javascript:toPro('{$info.0.pro_id}','{$info.0.proname}','{$info.0.type}');" class="up-font-tit" style="">项目-{$info.0.proname}</a></label>
+      <div style="margin:0px;" class="view-line"></div>
+   </td>
+   </tr>
+  </thead>
+  <tbody>
+  <?php
+    $tc = count($info)*3;
+    foreach($info as $k=>$t){
+    //dump($t);
+    $uid = $t['user_id'];
+  ?>
+  
+  <?php
+  if($t){
+  ?>
+  <tr class="rebg" style="height:20px; line-height:20px;">
+    <td width="21%">
+     <label>
+     <?php echo $tabs[$t['type']]; ?>
+    </label>
+    </td>
+    <td width="33%">{$t.username}</td>
+    <td width="46%">{$t.addtime}</td>
+  </tr>
+    <tr>
+     <td height="19" colspan="3">{$t.description}</td>
+    </tr>
+    <?php
+     if($t['comment']){
+    ?>
+    <tr>
+     <td height="19" colspan="3" style="padding:3px">
+     <table width="100%" class="infobox table-border" border="0" cellspacing="0" cellpadding="0">
+   <?php
+     foreach($t['comment'] as $s){
+   ?>
+    <tr class="rebg2">
+     <td width="21%">{$s.username}</td>
+     <td width="33%">{$s.addtime}</td>
+     <td width="46%" align="right">&nbsp;</td>
+    </tr>
+    <tr>
+     <td height="19" colspan="3">{$s.description}</td>
+    </tr>
+   <?php
+     }
+    ?>
+      </table> 
+     </td>
+    </tr>
+   <?php
+     }
+    }
+   }
+   ?>
+ </tbody>
+</table>
+</if>
+<?php
+ }
+?>
+<else />
+<table width="100%" class="infobox table-border" border="0" cellspacing="0" cellpadding="0" style="margin-bottom:5px">
+  <tr>
+    <td width="3%" height="25" colspan="3" valign="middle" class="rebg3 up-font-tit"><label>最近{$days}天内没有新的项目跟进信息！</label></td>
+  </tr>
+</table>
+</if>
+ 

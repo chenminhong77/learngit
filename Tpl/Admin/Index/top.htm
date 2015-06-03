@@ -1,0 +1,72 @@
+<script language="javascript">
+$(function(){
+	$("body").append("<div class='skin-box'>"
+	+"<div class='skin-list' id='default' title='默认蓝'><div class='skin-color' id='defaultBg'></div></div>"
+	+"<div class='skin-list' id='black' title='灰黑色'><div class='skin-color' id='blackBg'></div></div>"
+	+"<div class='skin-list' id='metro-gray' title='浅灰色'><div class='skin-color' id='mgrayBg'></div></div>"
+	+"<div class='skin-list' id='grinder' title='土黄色'><div class='skin-color' id='grinderBg'></div></div>"
+	+"<div class='skin-list' id='metro-red' title='粉红色'><div class='skin-color' id='mredBg'></div></div>"
+	+"<div class='skin-list' id='cupertino' title='宝石蓝'><div class='skin-color' id='cupertinoBg'></div></div>"
+	+"</div>");
+	
+	$("#chgSkin img").click(function(){
+		var sb = $(".skin-box");
+		var x = $(this).offset();
+		var xl = x.left;
+		var xt = x.top;
+		var xw = $(".skin-box").width();
+		var sw = $(".show").width();
+		//alert(xw);
+		sb.css({
+			top:xt+14,
+			left:xl-xw+21
+		});
+		sb.fadeToggle();
+		return false;
+	});
+	
+	$("body").click(function(){
+		$(this).find(".skin-box").click(function(){
+			return false;
+		});
+		var sb = $(".skin-box");
+		sb.fadeOut();
+	});
+	
+	$(".skin-list").click(function(){
+		var skinid = $(this).attr("id");
+		var skinexp = Number('{$TC.config.SKIN_COOKIE_EXPIRES}');
+		$("#adminSty").attr("href","__ITEM__/__ADMIN.CSS__/"+skinid+"/style.css");
+		$("#logoImg").attr("src","__ITEM__/__ADMIN.CSS__/"+skinid+"/logo.png");
+		$("#easySty").attr("href","__ITEM__/__UI__/themes/"+skinid+"/easyui.css");
+		$.cookie('easyui',skinid, { expires: skinexp });
+	});
+	
+	$.get('__URL__/getsms',function(data){
+		if(data>0){
+			$("#smsid").addClass("sms");
+			$("#smsid").html(data);
+			$("#smsid").attr("title","您有"+data+"条未读信息");
+		}else{
+			$("#smsid").removeClass("sms");
+			$("#smsid").html("");
+			$("#smsid").attr("title","");
+		}
+	});
+	
+	
+});
+</script>
+<div class="logo"><img id="logoImg" src="__ITEM__/__ADMIN.CSS__/default/logo.png" /></div>
+  <div class="show">
+   <div class="l2"><span id="localtime" style="margin-right:18px"></span><a style="vertical-align:middle;" href="#" id="chgSkin" title="切换皮肤"><img src="__ITEM__/__IMG__/skin.png" /></a> <span class="hi">你好：<strong><?php echo $_SESSION['login']['se_user'] ?></strong><span id="smsid" style="cursor:pointer;" onclick="toShowSms()"></span> - <?php echo $_SESSION['login']['se_group'] ?> &nbsp;[<a href="javascript:toSendMail();">发邮件</a>] <?php if($group_access>=9999){ ?>[<a href="javascript:toClearCache();">清除缓存</a>]<?php } ?> [<a href="javascript:toRepwd();">修改密码</a>] [<a href="javascript:toSetpwd();">邮箱设置</a>] [<a href="http://bbs.d-winner.com/" target="_blank">帮助</a>] [<a target="_top" href="__APP__?g=<?php echo GROUP_NAME; ?>&m=Index&a=safe">注销</a>] </span></div>
+</div>
+<script runat="server" language="javascript">
+function tick(){  
+    var today;  
+    today = new Date();
+    document.getElementById("localtime").innerHTML = showLocale(today);  
+    window.setTimeout("tick()", 1000);  
+}
+tick();
+</script>

@@ -1,0 +1,186 @@
+<script language="javascript">
+//$(".linebox tr:odd").addClass('even');
+$(function(){
+	$("#co{$uniqid}").linkbutton({
+		iconCls:'icon-cancel'
+	});
+	
+	$("#ma{$uniqid}").linkbutton({
+		iconCls:'icon-email'
+	});
+	
+	$("#re{$uniqid}").linkbutton({
+		iconCls:'icon-reset'
+	});
+	
+	$("#reply{$uniqid}").kindeditor({
+		uploadJson:'__APP__?g=Public&m=Upload&a=save&act=BugReply'
+	});
+});
+
+function onCloseBug(idd){
+	cancel['BugDetail'].dialog('close');
+	cancel['BugDetail'].dialog('destroy');
+	cancel['BugDetail'] = null;
+}
+
+
+function onReplyBug(idd){
+	$.messager.progress();
+	var ids = $("#ids"+idd).val();
+	var k = $("#reply{$uniqid}").kindeditor('editor');
+	isempty = k.isEmpty();
+	if(!isempty){
+		$("#replyFormBug"+idd).form('submit',{
+			url:'__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=reply&id='+ids,
+			onSubmit: function(){
+				var isValid = $(this).form('validate');
+				if (!isValid){
+					$.messager.progress('close');
+				}
+				return isValid;
+			},
+			success:function(data){
+				$.messager.progress('close');
+				if(data==1){
+					$.messager.alert('提示','发表评论成功！','info',function(){
+						cancel['BugDetail'].dialog('refresh');
+					});
+				}else if(data==0){
+					$.messager.alert('提示','发表评论失败！','warning');
+				}else{
+					//alert(data);
+					$.messager.alert('提示','您没有评论权限！','warning');
+				}
+			}
+		});
+	}else{
+		$.messager.progress('close');
+		$.messager.alert('提示','编辑框不能为空！','warning');
+		return false;
+	}
+}
+
+function toRe(id){
+	var k = $("#reply{$uniqid}").kindeditor('editor');
+	k.html("@"+id+"：");
+	$("#replyBox").parent().scrollTop(1000);
+}
+
+function toReTop(){
+	$("#replyBox").parent().scrollTop(1000);
+}
+
+function toDel(id){
+	$.messager.confirm('提示','确定删除吗？',function(r){
+		if(r){
+			$.post('__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=delreply', {val:id} ,function(data){
+				if(data==1){
+					$.messager.alert('提示','删除评论成功！','info',function(){
+						cancel['BugDetail'].dialog('refresh');
+					});
+				}else if(data==0){
+					$.messager.alert('提示','删除评论失败！','warning');
+				}else if(data==2){
+					$.messager.alert('提示','只能删除自己的评论！','warning');
+				}else{
+					$.messager.alert('提示','您没有删除权限！','warning');
+				}
+			});
+		}
+	});
+}
+</script>
+<div id="replyBox" class="con-tb">
+<form id="replyFormBug{$uniqid}" method="post"> 
+<table class="infobox linebox" width="100%" border="0" cellspacing="0" cellpadding="0" >
+  <tr>
+    <td width="12%" class="rebg"><label for="username">作者</label></td>
+    <td width="32%">{$info.user.username}&nbsp;<if condition="$uid!=$info['user_id']">[<a class="up-font" href="javascript:void(0);" onclick="toReTop()">回复</a>]</if></td>
+    <td width="12%" class="rebg"><label for="os">创建时间</label></td>
+    <td>{$info.addtime}</td>
+    </tr>
+  <tr>
+    <td class="rebg"><label for="title">问题描述</label></td>
+    <td colspan="3">{$info.title}</td>
+    </tr>
+  <tr>
+    <td width="12%" class="rebg"><label for="type">问题类型</label></td>
+    <td width="32%">{$info.type}</td>
+    <td width="12%" class="rebg"><label for="os">系统平台</label></td>
+    <td>{$info.os}</td>
+    </tr>
+  <tr>
+    <td class="rebg"><label for="project">对应项目</label></td>
+    <td colspan="3">{$info.project}</td>
+    </tr>
+  <tr>
+    <td class="rebg"><label for="content">详细现象</label></td>
+    <td colspan="3" valign="top"  >{$info.baseinfo.content}</td>
+    </tr>
+  <tr>
+    <td class="rebg"><label for="solution">解决方案</label></td>
+    <td colspan="3" valign="top"  >{$info.baseinfo.solution}</td>
+    </tr>
+  <tr>
+    <td class="rebg"><label for="files">附件</label></td>
+    <td colspan="3"  >
+     <if condition="$info['files']">
+      <a href="__URL__/down?filename=<?php echo urlencode($info['files']); ?>" target="_blank" class="up-font-over"><img src="__ITEM__/__ADMIN.IMG__/files.png" /> 下载</a>
+     <else />
+      <font style="color:#999;"><img src="__ITEM__/__ADMIN.IMG__/files.png" /> 下载</font>
+     </if>
+    </td>
+    </tr>
+  <tr >
+    <td colspan="4" style="padding:5px;">
+     <if condition="$info['reply']">
+     <table width="100%" class="infobox table-border" border="0" cellspacing="0" cellpadding="0">
+      <?php
+       $no = 1;
+       foreach($info['reply'] as $k=>$s){
+        if($k%2==0){
+         $rebg = 'rebg2';
+        }else{
+         $rebg = 'rebg3';
+        }
+      ?>
+      <tr class="{$rebg}">
+       <td width="5%" style="font-weight:bold">#{$no++}</td>
+       <td width="17%">{$s.username}</td>
+       <td width="32%">{$s.replytime}</td>
+       <td width="46%" align="right"><if condition="$uid!=$s['user_id']">[<a href="javascript:void(0);" onclick="toRe('{$s.username}')">回复</a>]</if> <if condition="$uid==$s['user_id'] || $isadmin==1">&nbsp;[<a href="javascript:void(0);" onclick="toDel({$s.id})">删除</a>]</if></td>
+      </tr>
+      <tr>
+       <td colspan="4">{$s.description}</td>
+       </tr>
+      <?php
+       }
+       $no = 1;
+      ?>
+     </table>
+     <else />
+      <table width="100%" class="infobox table-border" border="0" cellspacing="0" cellpadding="0">
+      <tr class="rebg2">
+       <td>暂无回复</td>
+       </tr>
+     </table>
+     </if>
+    </td>
+    </tr> 
+  <tr >
+    <td class="rebg"></td>
+    <td colspan="3" style="padding:10px" valign="middle">
+    <textarea name="description" id="reply{$uniqid}"  rows="18" style="width:99%; height:160px"></textarea>
+    <a style="margin-top:3px;" href="javascript:void(0);" onclick="javascript:onReplyBug('{$uniqid}')" id="re{$uniqid}">发表回复</a> <input id="ids{$uniqid}" type="hidden" value="{$id}" />
+    </td>
+    </tr> 
+  <!--
+  <tr>
+    <td height="38" colspan="4" align="center"><a href="#" onclick="javascript:onMailBug('{$uniqid}')" id="ma{$uniqid}">邮件提醒</a> &nbsp; <a href="#" onclick="javascript:onCloseBug('{$uniqid}')" id="co{$uniqid}">关闭</a></td>
+    </tr>
+   -->
+ </table>
+</form>
+</div>
+<div id="addOpts"></div>

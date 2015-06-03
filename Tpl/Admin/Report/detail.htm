@@ -1,0 +1,395 @@
+<script language="javascript">
+//$(".linebox tr:odd").addClass('even');
+$(function(){
+	$("#setStatus{$uniqid}").linkbutton({
+		iconCls:'icon-edit'
+	});
+	
+	$("#setUser{$uniqid}").linkbutton({
+		iconCls:'icon-edit'
+	});
+	
+	$("#upFile{$uniqid}").linkbutton({
+		iconCls:'icon-import'
+	});
+	
+	$("#re{$uniqid}").linkbutton({
+		iconCls:'icon-reset'
+	});
+	
+	$("#reply{$uniqid}").kindeditor({
+		uploadJson:'__APP__?g=Public&m=Upload&a=save&act=ReportReply'
+	});
+	
+	$("#status{$uniqid}").combobox({
+		url:'__ITEM__/__RUNTIME__/Data/Json/Linkage/wentizhuangtai_data.json',
+		editable:false,
+		method:'get',
+		required:true,
+		valueField:'id',
+		textField:'text',
+		onLoadSuccess:function(){
+			$("#status{$uniqid}").combobox('setValue','{$info.status}');
+		}
+	});
+	
+	var act = 1;
+	$("#user_id{$uniqid}").combobox({
+		url:'__ITEM__/__RUNTIME__/Data/Json/User_2_data.json',
+		editable:true,
+		method:'get',
+		valueField:'id',
+		textField:'text',
+		required:false,
+		filter: function(q,r){
+			var opts = $(this).combobox('options');
+			var v = r[opts.textField];
+			var vp = ','+String(getPinYin(v));
+			var qp = ','+q.toUpperCase();
+			if(vp.indexOf(qp)>=0 || v.indexOf(q) == 0){
+				return r[opts.textField];
+			}
+		},
+		onLoadSuccess:function(){
+			if(act==1){
+				$("#user_id{$uniqid}").combobox('setValue','{$info.user_id}');
+			}
+		}
+	});
+	
+	var mc = Number('<?php echo C("MORE_COMY") ?>');
+	if(mc){
+		$("#comy{$uniqid}").combotree({
+			url:'__ITEM__/__RUNTIME__/Data/Json/Comy_Part_data.json',
+			editable:false,
+			method:'get',
+			required:false,
+			valueField:'id',
+			textField:'text',
+			onSelect:function(c){
+				if(act!=1){
+					$("#user_id{$uniqid}").combobox('reload','__URL__/getUser/id/'+c['id']);
+					$("#user_id{$uniqid}").combobox('setValue',0);
+				}
+				act = 0;
+			},
+			onLoadSuccess:function(){
+				$("#comy{$uniqid}").combotree('setValue','{$info.comy}');
+				$("#user_id{$uniqid}").combobox('reload','__URL__/getUser/id/<?php echo $info["comy"] ?>');
+				act = 1;
+			}
+		});
+	}else{
+		$("#comy{$uniqid}").combobox({
+			url:'__ITEM__/__RUNTIME__/Data/Json/Part_2_data.json',
+			editable:false,
+			method:'get',
+			required:false,
+			valueField:'id',
+			textField:'text',
+			onSelect:function(c){
+				if(act!=1){
+					$("#user_id{$uniqid}").combobox('reload','__URL__/getUser/id/'+c['id']);
+					$("#user_id{$uniqid}").combobox('setValue',0);
+				}
+				act = 0;
+			},
+			onLoadSuccess:function(){
+				$("#comy{$uniqid}").combotree('setValue','{$info.comy}');
+				$("#user_id{$uniqid}").combobox('reload','__URL__/getUser/id/<?php echo $info["comy"] ?>');
+				act = 1;
+			}
+		});
+	}
+});
+
+function onCloseReport(idd){
+	cancel['ReportDetail'].dialog('close');
+	cancel['ReportDetail'].dialog('destroy');
+	cancel['ReportDetail'] = null;
+}
+
+
+function onReplyReport(idd){
+	$.messager.progress();
+	var ids = $("#ids"+idd).val();
+	var k = $("#reply{$uniqid}").kindeditor('editor');
+	isempty = k.isEmpty();
+	if(!isempty){
+		$("#replyFormReport"+idd).form('submit',{
+			url:'__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=reply&id='+ids,
+			onSubmit: function(){
+				var isValid = $(this).form('validate');
+				if (!isValid){
+					$.messager.progress('close');
+				}
+				return isValid;
+			},
+			success:function(data){
+				$.messager.progress('close');
+				if(data==1){
+					$.messager.alert('提示','发表反馈成功！','info',function(){
+						cancel['ReportDetail'].dialog('refresh');
+					});
+				}else if(data==0){
+					$.messager.alert('提示','发表反馈失败！','warning');
+				}else{
+					//alert(data);
+					$.messager.alert('提示','您没有反馈权限！','warning');
+				}
+			}
+		});
+	}else{
+		$.messager.progress('close');
+		$.messager.alert('提示','编辑框不能为空！','warning');
+		return false;
+	}
+}
+
+function onUploadReport(idd){
+	$.messager.progress();
+	var ids = $("#ids"+idd).val();
+	$("#uploadFormReport"+idd).form('submit',{
+		url:'__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=upfile&id='+ids,
+		onSubmit: function(){
+			var isValid = $(this).form('validate');
+			if (!isValid){
+				$.messager.progress('close');
+			}
+			return isValid;
+		},
+		success:function(data){
+			$.messager.progress('close');
+			if(data==1){
+				$.messager.alert('提示','上传附件成功！','info',function(){
+					cancel['ReportDetail'].dialog('refresh');
+				});
+			}else if(data==0){
+				$.messager.alert('提示','上传附件失败！','warning');
+			}else if(data<0){
+				$.messager.alert('提示','您没有上传权限！','warning');
+			}else{
+				$.messager.alert('提示',data,'warning');
+			}
+		}
+	});
+}
+
+function toRe(id){
+	var k = $("#reply{$uniqid}").kindeditor('editor');
+	k.html("@"+id+"：");
+	$("#replyBox").parent().scrollTop(1000);
+}
+
+function toReTop(){
+	$("#replyBox").parent().scrollTop(1000);
+}
+
+function toDel(id){
+	$.messager.confirm('提示','确定删除吗？',function(r){
+		if(r){
+			$.post('__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=delreply', {val:id} ,function(data){
+				if(data==1){
+					$.messager.alert('提示','删除评论成功！','info',function(){
+						cancel['ReportDetail'].dialog('refresh');
+					});
+				}else if(data==0){
+					$.messager.alert('提示','删除评论失败！','warning');
+				}else if(data==2){
+					$.messager.alert('提示','只能删除自己的评论！','warning');
+				}else{
+					$.messager.alert('提示','您没有删除权限！','warning');
+				}
+			});
+		}
+	});
+}
+
+function onDelUpload(id,uid,path){
+	$.messager.confirm('提示','确定删除吗？',function(r){
+		if(r){
+			$.post('__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=delfile', {id:id,uid:uid,path:path} ,function(data){
+				if(data==1){
+					$.messager.alert('提示','删除附件成功！','info',function(){
+						cancel['ReportDetail'].dialog('refresh');
+					});
+				}else if(data==0){
+					$.messager.alert('提示','删除附件失败！','warning');
+				}else if(data==2){
+					$.messager.alert('提示','您不能删除此附件！','warning');
+				}else{
+					$.messager.alert('提示','您没有删除权限！','warning');
+				}
+			});
+		}
+	});
+}
+
+function onSetUser(id){
+	var comy = $("#comy{$uniqid}").combotree('getValue');
+	var uid = $("#user_id{$uniqid}").combobox('getValue');
+	var olduser = $("#olduser{$uniqid}").val();
+	$.post('__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=setuser', {id:id,comy:comy,uid:uid,olduser:olduser} ,function(data){
+		if(data==1){
+			$.messager.alert('提示','更新指派成功！','info',function(){
+				cancel['ReportDetail'].dialog('refresh');
+			});
+		}else if(data==0){
+			$.messager.alert('提示','更新指派失败！','warning');
+		}else{
+			alert(data);
+			$.messager.alert('提示','您没有更新权限！','warning');
+		}
+	});
+}
+
+function setStatus(id){
+	var status = $("#status{$uniqid}").combobox('getValue');
+	var oldstatus = $("#oldstatus{$uniqid}").val();
+	$.post('__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=setstatus', {id:id,val:status,oldstatus:oldstatus} ,function(data){
+		if(data==1){
+			$.messager.alert('提示','更新状态成功！','info',function(){
+				cancel['ReportDetail'].dialog('refresh');
+			});
+		}else if(data==0){
+			$.messager.alert('提示','更新状态失败！','warning');
+		}else{
+			$.messager.alert('提示','您没有更新权限！','warning');
+		}
+	});
+}
+</script>
+<div id="replyBox" class="con-tb"> 
+<table class="infobox linebox" width="100%" border="0" cellspacing="0" cellpadding="0" >
+  <tr>
+    <td width="11%" class="rebg"><label for="bugno">问题编号</label></td>
+    <td width="23%">{$info.bugno}&nbsp;<if condition="$uid!=$info['crearor']">[<a class="up-font" href="javascript:void(0);" onclick="toReTop()">反馈</a>]</if></td>
+    <td width="11%" class="rebg"><label for="creator">创建人</label></td>
+    <td width="22%">{$info.createname}</td>
+    <td width="11%" class="rebg"><label for="addtime">创建时间</label></td>
+    <td width="22%">{$info.addtime}</td>
+    </tr>
+  <tr>
+    <td class="rebg"><label for="type">出现位置</label></td>
+    <td>{$info.type}</td>
+    <td class="rebg"><label for="pid">所属项目</label></td>
+    <td>{$info.proname}</td>
+    <td class="rebg"><label for="addtime">修改时间</label></td>
+    <td>{$info.uptime}</td>
+    </tr>
+  <tr>
+    <td width="11%" class="rebg"><label for="level">严重性</label></td>
+    <td width="23%">{$info.level}</td>
+    <td width="11%" class="rebg"><label for="hertz">频率</label></td>
+    <td>{$info.hertz}</td>
+    <td class="rebg"><label for="priority">优先级</label></td>
+    <td>{$info.priority}</td>
+    </tr>
+  <tr>
+    <td class="rebg"><label for="title">摘要</label></td>
+    <td colspan="3">{$info.title}</td>
+    <td class="rebg"><label for="os">平台</label></td>
+    <td>{$info.os}</td>
+    </tr>
+  <if condition="$isadmin==1 || $uid==$info['user_id'] || $uid==$info['creator']">
+  <tr class="rebg1">
+    <td height="28" ><label for="user_id">指派给</label></td>
+    <td colspan="3"  ><input name="comy" id="comy{$uniqid}" class="relo" style="width:250px;" />&nbsp;-->&nbsp;<input name="user_id" id="user_id{$uniqid}" class="relo" style="width:120px;" /><input name="olduser" id="olduser{$uniqid}" type="hidden" value="{$info.user_id}" />&nbsp;<a href="javascript:void(0);" onclick="javascript:onSetUser('{$id}')" id="setUser{$uniqid}">提交</a></td>
+    <td><label for="status">问题状态</label></td>
+    <td  ><input name="status" id="status{$uniqid}" class="relo" size="15" /><input name="oldstatus" id="oldstatus{$uniqid}" type="hidden" value="{$info.status}" />&nbsp;<a href="javascript:void(0);" onclick="javascript:setStatus('{$id}')" id="setStatus{$uniqid}">提交</a></td>
+    </tr>
+   <else />
+   <tr>
+    <td class="rebg"><label for="user_id">指派给</label></td>
+    <td  >{$info.username}</td>
+    <td  ></td>
+    <td  >&nbsp;</td>
+    <td  class="rebg" ><label for="status">问题状态</label></td>
+    <td  >{$info.statusname}</td>
+    </tr>
+   </if>
+   <tr>
+    <td class="rebg"><label for="notes">详细现象</label></td>
+    <td colspan="5"  >{$info.baseinfo.notes}</td>
+    </tr>
+   <tr>
+    <td class="rebg"><label for="comment">备注</label></td>
+    <td colspan="5"  >{$info.baseinfo.comment}</td>
+    </tr>
+  <if condition="$info['files']"> 
+  <tr>
+    <td class="rebg"><label for="files">附件</label></td>
+    <td colspan="5"  >
+    <foreach name="info['files']" item="s">
+      <div style="line-height:26px;"><a href="__URL__/down?filename=<?php echo urlencode($s['path']); ?>"><img src="__ITEM__/__ADMIN.IMG__/files.png" />{$s['path']}</a>&nbsp;
+      <if condition="$isadmin==1 || $uid==$s['user_id']">
+      [<a class="up-font" href="javascript:void(0);" onclick="javascript:onDelUpload('{$s.id}','{$s.user_id}','{$s.path}')">删除</a>]
+      </if>
+      </div>
+    </foreach>
+    </td>
+    </tr>
+  </if>
+  <if condition="$isadmin==1 || $uid==$info['user_id'] || $uid==$info['creator']">
+  <tr class="rebg1">
+    <td><label for="files">选择文件</label></td>
+    <td height="28" colspan="5"  >
+    <form method="post" enctype="multipart/form-data" id="uploadFormReport{$uniqid}">
+    <input name="path" type="file" />&nbsp;<a href="javascript:void(0);" onclick="javascript:onUploadReport('{$uniqid}')" id="upFile{$uniqid}">上传</a>&nbsp;<span class="up-font-over">(文件类型：rar、zip)</span>
+    </form>
+    </td>
+  </tr>
+  </if>
+  <tr >
+    <td colspan="6" style="padding:5px;">
+     <if condition="$info['reply']">
+     <table width="100%" class="infobox table-border" border="0" cellspacing="0" cellpadding="0">
+      <?php
+       $no = 1;
+       foreach($info['reply'] as $k=>$s){
+        if($k%2==0){
+         $rebg = 'rebg2';
+        }else{
+         $rebg = 'rebg3';
+        }
+      ?>
+      <tr class="{$rebg}">
+       <td width="5%" style="font-weight:bold">#{$no++}</td>
+       <td width="17%">{$s.username}</td>
+       <td width="32%">{$s.replytime}</td>
+       <td width="46%" align="right"><if condition="$uid==$s['user_id'] || $isadmin==1">&nbsp;[<a href="javascript:void(0);" onclick="toDel({$s.id})">删除</a>]</if></td>
+      </tr>
+      <tr>
+       <td colspan="4">{$s.description}</td>
+       </tr>
+      <?php
+       }
+       $no = 1;
+      ?>
+     </table>
+     <else />
+      <table width="100%" class="infobox table-border" border="0" cellspacing="0" cellpadding="0">
+      <tr class="rebg2">
+       <td>暂无反馈</td>
+       </tr>
+     </table>
+     </if>
+    </td>
+    </tr> 
+  <tr >
+    <td class="rebg"></td>
+    <td colspan="5" style="padding:10px" valign="middle">
+    <form method="post" id="replyFormReport{$uniqid}">
+    <textarea name="description" id="reply{$uniqid}"  rows="18" style="width:99%; height:160px"></textarea>
+    <a style="margin-top:3px;" href="javascript:void(0);" onclick="javascript:onReplyReport('{$uniqid}')" id="re{$uniqid}">发表反馈</a> <input id="ids{$uniqid}" type="hidden" value="{$id}" />
+    </form>
+    </td>
+    </tr> 
+  <!--
+  <tr>
+    <td height="38" colspan="4" align="center"><a href="#" onclick="javascript:onMailReport('{$uniqid}')" id="ma{$uniqid}">邮件提醒</a> &nbsp; <a href="#" onclick="javascript:onCloseReport('{$uniqid}')" id="co{$uniqid}">关闭</a></td>
+    </tr>
+   -->
+ </table>
+</div>
+<div id="addOpts"></div>

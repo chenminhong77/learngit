@@ -1,0 +1,64 @@
+<script language="javascript">
+$(function(){
+	var th = $(".top").height();
+	th = 111-th;
+	var wh = $(window).height()-th;
+	var cw = $(window).width()-177;
+	whs = wh/2-52;
+	$("#newpro").panel({
+		title:'最新跟进',
+		height:wh,
+		width:cw,
+		headerCls:'panel-main-header',
+		href:'__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=myview&json=1',
+		onBeforeOpen: function () {  
+			 if($("#ViewCon .panel-tool #seleView").length==0){
+				 var pan = $("#ViewCon .panel-tool");
+				 var date = $("#selectInputView").html();
+				 pan.prepend(date); 
+				 $("#seleView").change(function(){
+					var idd = $(this).val();
+					//alert(idd);
+					$.get('__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=change&id='+idd, function(data){
+						$("#newpro").panel('refresh');
+					});
+				}); 
+			 }  
+		},tools:[{
+			title:'重载',
+			iconCls: 'icon-reload',
+			handler: function(){
+				$("#newpro").panel('refresh');
+			}
+		}]
+	});
+	
+	$("#rightTabs").tabs({
+		onClose:function(t,i){
+			$.ajaxSetup({  
+				async : false  
+			});
+			if(t=='最新跟进'){
+				$.get('__APP__?g=<?php echo GROUP_NAME; ?>&m=<?php echo MODULE_NAME; ?>&a=clear&act=view', function(data){});
+			}	
+			$.ajaxSetup({  
+				async : true  
+			});
+		}
+	});
+	
+	$("#rightTabs").tabs('select','最新跟进');
+});
+</script>
+<div class="con" id="ViewCon">
+ <div id="newpro" style="padding:3px;"></div>
+</div>
+<div id="selectInputView" style="display:none">
+ <select id="seleView" style="margin-right:15px; margin-top:-2px; height:20px;">
+   <option value="7">最近7天</option>
+   <option value="30">最近30天</option>
+   <option value="60">最近2个月</option>
+   <option value="90">最近3个月</option>
+   <option value="180">最近半年</option>
+ </select>
+</div>

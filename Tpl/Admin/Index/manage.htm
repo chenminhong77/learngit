@@ -1,0 +1,197 @@
+<script language="javascript">
+$(function(){
+	var th = $(".top").height();
+	th = 111-th
+	var wh = $(window).height()-th;
+	var cw = $(window).width()-177;
+	whs = wh/7*5;
+	var ch = $("body").height();
+	$("#comm").panel({
+		title:'未解决的问题',
+		doSize:true,
+		collapsible:true
+	});
+	
+	$("#ReportIndex").datagrid({
+		//title:'BUG列表',
+		autoRowHeight:false,
+		singleSelect:true,
+		striped:true,
+		height:whs,
+		rownumbers:true,
+		pagination:true,
+		showFooter:true,
+		prototype:true,
+		pageSize:15,
+		pageList:[15,30,50,80,100,100000000000],
+		method:'get',
+		url:'__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=index&json=1&ord=ing',
+		fitColumns:Number('{$TC.config.DG_FIT_COLUMNS}'),
+		nowrap:Number('{$TC.config.DATA_NOWRAP}'),
+		selectOnCheck:false,
+		checkOnSelect:true,
+		onDblClickRow:function(e,rowIndex,rowData){
+			//var se = $(this).datagrid('getSelected');
+			var se = $("#ReportIndex").datagrid('getChecked');
+			var se_len = se.length;
+			var idd = se[0]['id'];
+			if(se_len==1){
+				$("<div/>").dialog({
+					title:'BUG详情',
+					resizable:true,
+					width:955,
+					height:ch-80,
+					href:'__APP__?g=<?php echo GROUP_NAME; ?>&m=Report&a=detail&id='+idd,
+					onOpen:function(){
+						cancel['ReportDetail'] = $(this);
+					},
+					onClose:function(){
+						//$("#Bug").datagrid('reload');
+						$(this).dialog('destroy');
+						cancel['ReportDetail'] = null;
+					}
+				});
+			}
+		},
+		onUncheck:function(i,d){
+			$("#ReportIndex").datagrid('unselectRow',i);
+		},
+		frozenColumns:[[
+			{field:'bugno',title:'<span>问题编号</span>',width:83,sortable:true}
+		]],
+		columns:[[  
+			{field:'status',title:'<span>状态</span>',width:60,sortable:true},
+			{field:'user_id',title:'<span>指派人</span>',width:60,sortable:true},
+			{field:'type',title:'<span>出现位置</span>',width:60,sortable:true},
+			{field:'level',title:'<span>严重性</span>',width:55,sortable:true},
+			{field:'hertz',title:'<span>频率</span>',width:60,sortable:true},
+			{field:'priority',title:'<span>优先级</span>',width:55,sortable:true},
+			{field:'creator',title:'<span>提交人</span>',width:60,sortable:true},
+			{field:'addtime',title:'<span>提交日期</span>',width:145,sortable:true}
+		]]
+	});
+	
+	whs = wh/7*2-63;
+	$("#copy").panel({
+		title:'程序团队',
+		doSize:true,
+		height:whs,
+		collapsible:true
+	});
+	
+	whs = (wh-33)/2;
+	$("#today").panel({
+		title:'工作管理',
+		doSize:true,
+		height:whs,
+		collapsible:true
+	});
+	
+	whs = (wh-23)/2;
+	$("#info").panel({
+		title:'信息总计',
+		doSize:true,
+		height:whs,
+		collapsible:true
+	});
+});
+</script>
+<div class="con">
+<table width="100%" border="0" cellspacing="1" cellpadding="0">
+  <tr>
+    <td width="56%" valign="top"> 
+        <div id="comm" style="padding:3px; -moz-user-select:none;" onselectstart="return false;">
+          <table id="ReportIndex"></table>
+        </div>
+        
+        <div class="tb-line"></div>
+        
+        <div id="copy" style="padding:2px">
+          <table class="infobox table-border" width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">主程序开发</td>
+            <td><a href="http://www.d-winner.com/" target="_blank">梦赢科技</a>、<a href="http://www.95cms.cn/" target="_blank">九五互联</a></td>
+            </tr>
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">赞助商</td>
+            <td><a href="http://www.075595.com/" target="_blank">95数据中心</a></td>
+            </tr>
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">鸣谢</td>
+            <td>ThinkPHP、EasyUI</td>
+            </tr>
+          </table>
+        </div>
+    </td>
+    <td width="1%" valign="top">&nbsp;</td>
+    <td width="43%" valign="top">
+      <div id="today" style="padding:2px">
+        <table class="infobox table-border" width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">待审核日志</td>
+            <td><?php echo $app->getTotal('Trip_daily','status=2') ?></td>
+            </tr>
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">未解决问题</td>
+            <td><?php echo $app->getTotal('Report_table','status<5') ?></td>
+            </tr>
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">规划中项目</td>
+            <td><?php echo $app->getTotal('Project_table','status=1') ?></td>
+            </tr>
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">调试中项目</td>
+            <td><?php echo $app->getTotal('Project_table','status=2') ?></td>
+            </tr>
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">已完成项目</td>
+            <td><?php echo $app->getTotal('Project_table','status=3') ?></td>
+            </tr>
+          </table>
+      </div>
+      
+      <div class="tb-line"></div>
+      
+      <div id="info" style="padding:2px;">
+        <table class="infobox table-border" width="100%" border="0" cellspacing="0" cellpadding="0">
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">用户总数</td>
+            <td><?php echo $app->getTotal('User_table') ?></td>
+            </tr>
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">角色总数</td>
+            <td><?php echo $app->getTotal('User_group_table') ?></td>
+            </tr>
+          <if condition="C('MORE_COMY')">
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">子公司总数</td>
+            <td><?php echo $app->getTotal('User_company_table','type=0') ?></td>
+            </tr>
+          </if>
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">部门总数</td>
+            <td><?php echo $app->getTotal('User_part_table') ?></td>
+            </tr>
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">项目总数</td>
+            <td><?php echo $app->getTotal('Project_table') ?></td>
+            </tr>
+          <tr style="height:23px; line-height:23px;">
+            <td width="29%">客户总数</td>
+            <td><?php echo $app->getTotal('User_company_table','type=1') ?></td>
+            </tr>
+           <tr style="height:23px; line-height:23px;">
+            <td width="29%">BUG百科总数</td>
+            <td><?php echo $app->getTotal('Bug_table') ?></td>
+            </tr>
+           <tr style="height:23px; line-height:23px;">
+            <td width="29%">出差日志总数</td>
+            <td><?php echo $app->getTotal('Trip_daily') ?></td>
+            </tr>
+          </table>
+      </div>
+    </td>
+    </tr>
+</table>
+<div align="center" style="line-height:23px">Copyright © 2010-2014 D-WINNER. <a href="http://www.d-winner.com/" target="_blank">梦赢科技</a> 版权所有</div>
+</div>
